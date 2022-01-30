@@ -7,7 +7,7 @@
 #include <mysql.h>
 using namespace std;
 MYSQL mysql;
-string aim[2][8] = { "NULL", "id", "name", "sex", "grade", "C_program", "math", "English", "NULL", "学号", "姓名", "性别", "班级", "C语言成绩", "高数成绩", "英语成绩"};
+string aim[2][10] = { "NULL", "id", "name", "sex", "grade", "C_program", "math", "English", "sum", "pjnum", "NULL", "学号", "姓名", "性别", "班级", "C语言成绩", "高数成绩", "英语成绩", "总分", "平均分"};
 void two(void);
 
 
@@ -93,7 +93,7 @@ MYSQL_RES* four(int judge)//功能四：查询学生信息
 	return 0;
 }
 
-void three(void)//功能三：修改学生信息（待完善）
+void three(void)//功能三：修改学生信息
 {
 	cout << endl;
 	cout << "+---------------------------------+\n";
@@ -112,6 +112,7 @@ void three(void)//功能三：修改学生信息（待完善）
 	case 1:
 	{
 		MYSQL_RES* res = four(1);
+		if (res == 0) return;
 		MYSQL_ROW row;
 		cout << endl;
 		cout << "+---------------------------------+\n";
@@ -145,16 +146,44 @@ void three(void)//功能三：修改学生信息（待完善）
 			{
 				cout << "请输入学号为" << row[0] << "的" << aim[1][n] << "新数据：";
 				cin >> Newmessage;
+				if (5 <= n && n <= 7)
+				{
+					stringstream ss1, ss2, ss3;
+					float sum, t;
+					ss1 << row[n-1]; ss1 >> sum;
+					for (int begin = 5; begin <= 7; begin++)
+					{
+						if (begin == n)
+							continue;
+						stringstream ss[3];
+						ss[begin-5] << row[begin-1]; ss[begin-5] >> t;
+						sum += t;
+					}
+					string temp, pjtemp;
+					ss2 << sum; ss2 >> temp;
+					ss3 << sum / 3; ss3 >> pjtemp;
+					letter = "update student set " + aim[0][8] + " = \'" + temp + "\' where id = " + row[0];
+					const char* stl = letter.c_str();
+					sql_execute(mysql, stl);
+					letter = "update student set " + aim[0][9] + " = \'" + pjtemp + "\' where id = " + row[0];
+					stl = letter.c_str();
+					sql_execute(mysql, stl);
+				}
 				letter = "update student set " + aim[0][n] + " = \'" + Newmessage + "\' where id = " + row[0];
 			}
 			const char* stl = letter.c_str();
-			mysql_query(&mysql, stl);
+			sql_execute(mysql, stl);
 			cout << endl;
 		}
 		mysql_free_result(res);
 		two();
 	} break;
 	case 2:
+	{
+		string letter = "DELETE FROM student";
+		const char* stl = letter.c_str();
+		sql_execute(mysql, stl);
+	}break;
 	default: cout << "该程序没有这个功能！\n";
 	}
 	return;
