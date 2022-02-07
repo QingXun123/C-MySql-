@@ -71,7 +71,7 @@ void sql_printf(MYSQL_RES* res)//输出表
 	return;
 }
 
-void four_menu(int judge)
+void four_menu(bool judge)//功能四菜单
 {
 	cout << "+---------------------------------+\n";
 	cout << "|          ";
@@ -94,8 +94,23 @@ void four_menu(int judge)
 	return;
 }
 
-string four_fenduan(void)
+MYSQL_RES* four_refer_deassign(MYSQL_RES* res, const char* stl, bool judge)//输出查询结果并且重新给res赋值
 {
+	if (!judge)
+		sql_printf(res);
+	else
+	{
+		system("cls");
+		sql_printf(res);
+		mysql_query(&mysql, stl);
+		res = mysql_store_result(&mysql);
+	}
+	return res;
+}
+
+MYSQL_RES* four_refer_section(bool judge)//分段查找
+{
+	MYSQL_RES* res;
 	string letter;
 	float a, b;
 	string sa, sb;
@@ -109,10 +124,13 @@ string four_fenduan(void)
 	ssa << a; ssa >> sa;
 	ssb << b; ssb >> sb;
 	letter = "select * from student where `sum` >= \'" + sa + "\' && sum <= \'" + sb + '\'';
-	return letter;
+	const char* stl = letter.c_str();
+	mysql_query(&mysql, stl);
+	res = mysql_store_result(&mysql);
+	return four_refer_deassign(res, stl, judge);
 }
 
-MYSQL_RES* four_chaxun(MYSQL_RES* &res, int n, int judge)
+MYSQL_RES* four_refer(MYSQL_RES* &res, int n, int judge)//查询学生信息
 {
 	string message, letter;
 	cout << "请输入想要查询的" << aim[1][n] << "：";
@@ -121,31 +139,30 @@ MYSQL_RES* four_chaxun(MYSQL_RES* &res, int n, int judge)
 	const char* stl = letter.c_str();
 	mysql_query(&mysql, stl);
 	res = mysql_store_result(&mysql);
-	if (!judge)
-	{
-		sql_printf(res);
-		mysql_free_result(res);
-	}
-	else
-	{
-		system("cls");
-		sql_printf(res);
-		mysql_query(&mysql, stl);
-		res = mysql_store_result(&mysql);
-		return res;
-	}
-	return 0;
+	return four_refer_deassign(res, stl, judge);
 }
 
-void four_statistics(MYSQL_RES* &res)
+int four_statistics_row_num(MYSQL_RES* &res)//返回表内学生信息数量
+{
+	MYSQL_ROW row;
+	mysql_query(&mysql, "SELECT COUNT(1) FROM student");
+	res = mysql_store_result(&mysql);
+	row = mysql_fetch_row(res);
+	stringstream ssum;
+	int row_num;
+	ssum << row[0]; ssum >> row_num;
+	return row_num;
+}
+
+void four_statistics(MYSQL_RES* &res)//统计学生信息
 {
 	MYSQL_ROW row;
 	string letter = "select * from student";
 	const char* stl = letter.c_str();
+	int row_num = four_statistics_row_num(res);
 	mysql_query(&mysql, stl);
 	res = mysql_store_result(&mysql);
 	float Spjnum = 0, math_pjnum = 0, C_program_pjnum = 0, English_pjnum = 0, dis_pjnum_num = 0, dis_C_program_num = 0, dis_math_num = 0, dis_English_num = 0;
-	int len = 0;
 	while (row = mysql_fetch_row(res))
 	{
 		stringstream ss4, ss5, ss6, ss8;
@@ -154,22 +171,18 @@ void four_statistics(MYSQL_RES* &res)
 		ss5 << row[5]; ss5 >> mt;
 		ss6 << row[6]; ss6 >> Et;
 		ss8 << row[8]; ss8 >> pjt;
-		C_program_pjnum += Ct;//打印C语言成绩
+		C_program_pjnum += Ct / row_num;//打印C语言成绩
 		if (Ct < 60)
 			dis_C_program_num++;
-		math_pjnum += mt;//打印高数成绩
+		math_pjnum += mt / row_num;//打印高数成绩
 		if (mt < 60)
 			dis_math_num++;
-		English_pjnum += Et;//打印英语成绩
+		English_pjnum += Et / row_num;//打印英语成绩
 		if (Et < 60)
 			dis_English_num++;
 		if (pjt < 60)
 			dis_pjnum_num++;
-		len++;
 	}
-	C_program_pjnum /= len;
-	math_pjnum /= len;
-	English_pjnum /= len;
 	Spjnum = (C_program_pjnum + math_pjnum + English_pjnum) / 3;
 	cout << endl << "全校平均分\t\t" << Spjnum << endl;
 	cout << "C语言平均分\t\t" << C_program_pjnum << endl;
@@ -183,7 +196,7 @@ void four_statistics(MYSQL_RES* &res)
 	return;
 }
 
-void three_adjust_sum_pjnum(MYSQL_ROW row, int n)
+void three_adjust_sum_pjnum(MYSQL_ROW row, int n)//计算总分和平均分并存储
 {
 	string letter;
 	stringstream ss1, ss2, ss3;
@@ -209,7 +222,7 @@ void three_adjust_sum_pjnum(MYSQL_ROW row, int n)
 	return;
 }
 
-void three_empty_data(void)
+void three_empty_data(void)//清空表数据
 {
 	int n;
 	cout << "是否清空数据？(1/0)" << endl;
@@ -240,8 +253,11 @@ void five(void)//功能五：更改排序方式
 	int n;
 	cout << "功能：";
 	cin >> n;
-	if (!n) return;
-	if (n == 7)
+	switch (n)
+	{
+	case 0: return;
+	case 1: case 2: case 3: case 4: case 5: case 6: n += 2; break;
+	case 7:
 	{
 		if (od)
 			od = 0;
@@ -249,14 +265,14 @@ void five(void)//功能五：更改排序方式
 			od = 1;
 		ordertemp = order[od];
 		return;
+	} break;
+	default: cout << "该程序没有这个功能！\n"; system("pause");
 	}
-	if (n > 1)
-		n += 2;
 	order_main = aim[0][n];
 	return;
 }
 
-MYSQL_RES* four(int judge)//功能四：查询学生信息
+MYSQL_RES* four(bool judge)//功能四：查询学生信息
 {
 	system("cls");
 	MYSQL_RES* res;
@@ -275,7 +291,7 @@ MYSQL_RES* four(int judge)//功能四：查询学生信息
 		return 0;
 	}
 	case 3: n++; break;
-	case 4: letter = four_fenduan(); break;
+	case 4: return four_refer_section(judge);
 	case 1: case 2: break;
 	case 5:
 	{
@@ -285,7 +301,7 @@ MYSQL_RES* four(int judge)//功能四：查询学生信息
 	}return 0;
 	default: cout << "该程序没有这个功能！\n"; system("pause"); system("cls"); four(judge);
 	}
-	res = four_chaxun(res, n, judge);
+	res = four_refer(res, n, judge);
 	if (!judge)
 		system("pause");
 	return res;
@@ -362,10 +378,9 @@ void three(void)//功能三：修改学生信息
 		mysql_free_result(res);
 		two();
 	} break;
-	case 2: three_empty_data(); break;
+	case 2: three_empty_data(); break; system("pause");
 	default: cout << "该程序没有这个功能！\n"; system("pause"); system("cls"); three(); return;
 	}
-	system("pause");
 	return;
 }
 
