@@ -111,20 +111,16 @@ MYSQL_RES* four_refer_deassign(MYSQL_RES* res, const char* stl, bool judge)//输
 MYSQL_RES* four_refer_section(bool judge)//分段查找
 {
 	MYSQL_RES* res;
-	string letter;
+	char letter[1024];
 	float a, b;
-	string sa, sb;
-	stringstream ssa, ssb;
 	cout << "请输入两个分段" << endl << "第一个分段：";
 	cin >> a;
 	cout << "第二个分段：";
 	cin >> b;
 	if (a > b)
 		swap(a, b);
-	ssa << a; ssa >> sa;
-	ssb << b; ssb >> sb;
-	letter = "select * from student where `sum` >= \'" + sa + "\' && sum <= \'" + sb + '\'';
-	const char* stl = letter.c_str();
+	sprintf(letter, "SELECT * FROM student WHERE `sum` >= \' %.2f \' && sum <= \' %.2f \'", a, b);
+	const char* stl = letter;
 	mysql_query(&mysql, stl);
 	res = mysql_store_result(&mysql);
 	return four_refer_deassign(res, stl, judge);
@@ -135,7 +131,7 @@ MYSQL_RES* four_refer(MYSQL_RES* &res, int n, int judge)//查询学生信息
 	string message, letter;
 	cout << "请输入想要查询的" << aim[1][n] << "：";
 	cin >> message;
-	letter = "select * from student where `" + aim[0][n] + "` like" + '\'' + message + "%\'";
+	letter = "SELECT * FROM student WHERE `" + aim[0][n] + "` like" + '\'' + message + "%\'";
 	const char* stl = letter.c_str();
 	mysql_query(&mysql, stl);
 	res = mysql_store_result(&mysql);
@@ -157,10 +153,8 @@ int four_statistics_row_num(MYSQL_RES* &res)//返回表内学生信息数量
 void four_statistics(MYSQL_RES* &res)//统计学生信息
 {
 	MYSQL_ROW row;
-	string letter = "select * from student";
-	const char* stl = letter.c_str();
 	int row_num = four_statistics_row_num(res);
-	mysql_query(&mysql, stl);
+	mysql_query(&mysql, "SELECT * FROM student");
 	res = mysql_store_result(&mysql);
 	float Spjnum = 0, math_pjnum = 0, C_program_pjnum = 0, English_pjnum = 0, dis_pjnum_num = 0, dis_C_program_num = 0, dis_math_num = 0, dis_English_num = 0;
 	while (row = mysql_fetch_row(res))
@@ -198,7 +192,7 @@ void four_statistics(MYSQL_RES* &res)//统计学生信息
 
 void three_adjust_sum_pjnum(MYSQL_ROW row, int n)//计算总分和平均分并存储
 {
-	string letter;
+	char letter1[1024], letter2[1024];
 	stringstream ss1, ss2, ss3;
 	float sum, t;
 	ss1 << row[n - 1]; ss1 >> sum;
@@ -210,14 +204,11 @@ void three_adjust_sum_pjnum(MYSQL_ROW row, int n)//计算总分和平均分并�
 		ss[begin - 5] << row[begin - 1]; ss[begin - 5] >> t;
 		sum += t;
 	}
-	string temp, pjtemp;
-	ss2 << sum; ss2 >> temp;
-	ss3 << sum / 3; ss3 >> pjtemp;
-	letter = "update student set " + aim[0][8] + " = \'" + temp + "\' where id = " + row[0];
-	const char* stl = letter.c_str();
+	sprintf(letter1, "UPDATE student SET %s = \'%.2f\' WHERE id = %s", aim[0][8].c_str(), sum, row[0]);
+	const char* stl = letter1;
 	sql_execute(mysql, stl);
-	letter = "update student set " + aim[0][9] + " = \'" + pjtemp + "\' where id = " + row[0];
-	stl = letter.c_str();
+	sprintf(letter2, "UPDATE student SET %s = \'%.2f\' WHERE id = %s", aim[0][9].c_str(), sum / 3, row[0]);
+	stl = letter2;
 	sql_execute(mysql, stl);
 	return;
 }
@@ -228,11 +219,7 @@ void three_empty_data(void)//清空表数据
 	cout << "是否清空数据？(1/0)" << endl;
 	cin >> n;
 	if (n)
-	{
-		string letter = "DELETE FROM student";
-		const char* stl = letter.c_str();
-		mysql_query(&mysql, stl);
-	}
+		mysql_query(&mysql, "DELETE FROM student");
 	return;
 }
 
@@ -291,7 +278,7 @@ MYSQL_RES* four(bool judge)//功能四：查询学生信息
 		return 0;
 	}
 	case 3: n++; break;
-	case 4: return four_refer_section(judge);
+	case 4: four_refer_section(judge); system("pause"); return 0;
 	case 1: case 2: break;
 	case 5:
 	{
@@ -351,27 +338,23 @@ void three(void)//功能三：修改学生信息
 			cout << "对" << row[0] << "进行修改" << endl;
 			cout << "功能：";
 			cin >> n;
-			string letter;
+			char letter[1024];
 			switch (n)
 			{
 			case 0: { mysql_free_result(res); goto end2;}
 			case 9: continue;
-			case 8:
-			{
-				letter = "DELETE FROM student WHERE id = ";
-				letter += row[0];
-			} continue;
+			case 8: sprintf(letter, "DELETE FROM student WHERE id = %s", row[0]); break;
 			case 1:case 2:case 3:case 4:case 5:case 6:case 7:
 			{
 				cout << "请输入学号为" << row[0] << "的" << aim[1][n] << "新数据：";
 				cin >> Newmessage;
 				if (5 <= n && n <= 7)
 					three_adjust_sum_pjnum(row, n);
-				letter = "update student set " + aim[0][n] + " = \'" + Newmessage + "\' where id = " + row[0];
+				sprintf(letter, "UPDATA student SET %s = \' %s \' WHERE id = %s", aim[0][n].c_str(), Newmessage.c_str(), row[0]);
 			} break;
 			default: cout << "该程序没有这个功能！请重新输入" << endl; goto end1;
 			}
-			const char* stl = letter.c_str();
+			const char* stl = letter;
 			sql_execute(mysql, stl);
 			cout << endl;
 		}
@@ -387,8 +370,9 @@ void three(void)//功能三：修改学生信息
 void two()//功能二：输出学生信息
 {
 	MYSQL_RES* res;
-	string letter = "select * from student ORDER BY `" + order_main + "` " + ordertemp;
-	const char* stl = letter.c_str();
+	char letter[1024];
+	sprintf(letter, "SELECT * FROM student ORDER BY `%s` %s", order_main.c_str(), ordertemp.c_str());
+	const char* stl = letter;
 	mysql_query(&mysql, stl);
 	res = mysql_store_result(&mysql);
 	sql_printf(res);
@@ -404,22 +388,21 @@ void one(void)//功能一：存入学生信息
 	cin >> num;
 	for (int begin = 1; begin <= num; begin++)
 	{
-		stringstream ss1, ss2, ss3, ss4, ss5;
-		string id, name, sex, grade, sid, sC, sm, sE, ss, spj;
-		float C_program, math, English;
+		string id, name, sex, grade;
+		float C_program, math, English, sum, pjnum;
 		cout << "请输入第" << begin << "行数据" << endl;
 		cout << "学号："; cin >> id;
 		cout << "姓名："; cin >> name;
 		cout << "性别："; cin >> sex;
 		cout << "班级："; cin >> grade;
-		cout << "C语言成绩："; cin >> C_program; ss1 << C_program; ss1 >> sC;
-		cout << "高等数学成绩："; cin >> math; ss2 << math; ss2 >> sm;
-		cout << "英语成绩："; cin >> English; ss3 << English; ss3 >> sE;
-		ss4 << C_program + math + English; ss4 >> ss;
-		ss5 << (C_program + math + English) / 3; ss5 >> spj;
-		string letter = "INSERT INTO student (id, `name`, sex, grade, C_program, math, English, `sum`, pjnum) VALUES (" + id + ",'" + name + "','" + sex + "'," + grade + ',' + sC + ',' + sm + ',' + sE + ',' + ss + ',' + spj + ')';
-		//fprintf(letter, "INSERT INTO student (id, `name`, sex, grade, C_program, math, English, `sum`, pjnum) VALUES (%d, \'%s\', \'%s\', %d, %f, %f, %f, %f, %f)" , id, name, sex, grade, C_program, math, English, sum, pjnum);
-		const char* sql1 = letter.c_str();
+		cout << "C语言成绩："; cin >> C_program;
+		cout << "高等数学成绩："; cin >> math;
+		cout << "英语成绩："; cin >> English;
+		sum = C_program + math + English;
+		pjnum = sum / 3;
+		char letter[1024];
+		sprintf(letter, "INSERT INTO student (id, `name`, sex, grade, C_program, math, English, `sum`, pjnum) VALUES (%s, \'%s\', \'%s\', %s, %.2f, %.2f, %.2f, %.2f, %.2f)" , id.c_str(), name.c_str(), sex.c_str(), grade.c_str(), C_program, math, English, sum, pjnum);
+		const char* sql1 = letter;
 		sql_execute(mysql, sql1);
 	}
 	return;
