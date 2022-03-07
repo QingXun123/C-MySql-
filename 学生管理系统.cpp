@@ -25,29 +25,90 @@ bool sql_execute(MYSQL m_mysql, const char* sql)//存储表数据
 	return true;
 }
 
-void sql_login(void)//sql登录
+void sql_connect(void)//sql连接
 {
-	string account, password;
-	cout << "请输入账号密码" << endl;
-	cout << "账号：";
-	cin >> account;
-	cout << "密码：";
-	cin >> password;
-	const char* taccount = account.c_str();
-	const char* tpassword = password.c_str();
 	mysql_init(&mysql);
 	mysql_options(&mysql, MYSQL_SET_CHARSET_NAME, "gbk");
-	if (mysql_real_connect(&mysql, "localhost", taccount, tpassword, "test", 3306, NULL, 0) == NULL)
+	if (mysql_real_connect(&mysql, "localhost", "root", "sz2003gd78439851", "test", 3306, NULL, 0) == NULL)
 	{
 		cout << "数据库连接失败，请重新登录！" << endl;
 		system("pause");
 		system("cls");
-		sql_login();
+		sql_connect();
 	}
 	else
 	{
 		system("cls");
 		cout << "数据库连接成功！" << endl;
+	}
+	return;
+}
+
+void sql_login()
+{
+	cout << "+---------------------------------+\n";
+	cout << "|           学生管理系统          |\n";
+	cout << "+----------------+----------------+\n";
+	cout << "| 1 登录账号     | 2 注册账号     |\n";
+	cout << "+----------------+----------------+\n";
+	string username, password;
+	char letter[1024];
+	bool judge = 1;
+	end:;
+	cout << "功能：";
+	int n;
+	cin >> n;
+	switch (n)
+	{
+	case 1:
+		while (judge)
+		{
+			MYSQL_ROW row;
+			MYSQL_RES* res;
+			cout << "请输入账号：";
+			cin >> username;
+			cout << "请输入密码：";
+			cin >> password;
+			sprintf(letter, "SELECT * FROM `user` WHERE `username` = '%s';", username.c_str());
+			const char* stl = letter;
+			mysql_query(&mysql, stl);
+			res = mysql_store_result(&mysql);
+			row = mysql_fetch_row(res);
+			if (row == NULL)
+			{
+				mysql_free_result(res);
+				cout << "账号不存在！" << endl;
+				continue;
+			}
+			if (row[1] != password)
+				cout << "密码错误" << endl;
+			else
+			{
+				system("cls");
+				cout << "登录成功！" << endl;
+				judge = 0;
+			}
+			mysql_free_result(res);
+		} break;
+	case 2:
+		while (judge)
+		{
+			cout << "请输入账号：";
+			cin >> username;
+			cout << "请输入密码：";
+			cin >> password;
+			sprintf(letter, "INSERT INTO `user` (username, `password`) VALUES ('%s', '%s');", username.c_str(), password.c_str());
+			const char* stl = letter;
+			if (mysql_query(&mysql, stl))
+				cout << "注册失败，账号名字已经被使用！" << endl << endl;
+			else
+			{
+				system("cls");
+				cout << "注册成功！" << endl;
+				judge = 0;
+			}
+		} break;
+	default: cout << "该程序没有这个功能！请重新输入" << endl << endl; goto end;
 	}
 	return;
 }
@@ -128,11 +189,12 @@ MYSQL_RES* four_refer_section(bool judge)//分段查找
 
 MYSQL_RES* four_refer(MYSQL_RES* &res, int n, int judge)//查询学生信息
 {
-	string message, letter;
+	string message;
+	char letter[1024];
 	cout << "请输入想要查询的" << aim[1][n] << "：";
 	cin >> message;
-	letter = "SELECT * FROM student WHERE `" + aim[0][n] + "` like" + '\'' + message + "%\'";
-	const char* stl = letter.c_str();
+	sprintf(letter, "SELECT * FROM student WHERE `%s` like '%s';", aim[0][n].c_str(), message.c_str());
+	const char* stl = letter;
 	mysql_query(&mysql, stl);
 	res = mysql_store_result(&mysql);
 	return four_refer_deassign(res, stl, judge);
@@ -225,144 +287,171 @@ void three_empty_data(void)//清空表数据
 
 void five(void)//功能五：更改排序方式
 {
-	system("cls");
-	cout << "+-------------------------------+\n";
-	cout << "|         更改排序方式          |\n";
-	cout << "+---------------+---------------+\n";
-	cout << "| 1 学号排序    | 2 班级排序    |\n";
-	cout << "+---------------+---------------+\n";
-	cout << "| 3 C语言排序   | 4 高数排序    |\n";
-	cout << "+---------------+---------------+\n";
-	cout << "| 5 英语排序    | 6 总分排序    |\n";
-	cout << "+---------------+---------------+\n";
-	cout << "| 7 升降序改变  | 0 返回        |\n";
-	cout << "+---------------+---------------+\n";
-	int n;
-	cout << "功能：";
-	cin >> n;
-	switch (n)
+	while (1)
 	{
-	case 0: return;
-	case 1: case 2: case 3: case 4: case 5: case 6: n += 2; break;
-	case 7:
-	{
-		if (od)
-			od = 0;
-		else
-			od = 1;
-		ordertemp = order[od];
-		return;
-	} break;
-	default: cout << "该程序没有这个功能！\n"; system("pause");
+		system("cls");
+		cout << "+-------------------------------+\n";
+		cout << "|         更改排序方式          |\n";
+		cout << "+---------------+---------------+\n";
+		cout << "| 1 学号排序    | 2 班级排序    |\n";
+		cout << "+---------------+---------------+\n";
+		cout << "| 3 C语言排序   | 4 高数排序    |\n";
+		cout << "+---------------+---------------+\n";
+		cout << "| 5 英语排序    | 6 总分排序    |\n";
+		cout << "+---------------+---------------+\n";
+		cout << "| 7 升降序改变  | 0 返回        |\n";
+		cout << "+---------------+---------------+\n";
+		int n;
+		cout << "功能：";
+		cin >> n;
+		switch (n)
+		{
+		case 0: return;
+		case 1: order_main = aim[0][n]; break;
+		case 2: case 3: case 4: case 5: case 6: n += 2; order_main = aim[0][n]; break;
+		case 7:
+			od = 1 - od;
+			ordertemp = order[od];
+			break;
+		default: cout << "该程序没有这个功能！\n"; system("pause");
+		}
+		two();
 	}
-	order_main = aim[0][n];
 	return;
 }
 
 MYSQL_RES* four(bool judge)//功能四：查询学生信息
 {
-	system("cls");
 	MYSQL_RES* res;
-	cout << endl;
-	four_menu(judge);
-	cout << "功能：";
-	int n;
-	cin >> n;
-	string letter;
-	switch (n)
+	while (1)
 	{
-	case 0: 
-	{
-		if (judge)
-			three();
-		return 0;
+		system("cls");
+		cout << endl;
+		four_menu(judge);
+		cout << "功能：";
+		int n;
+		cin >> n;
+		string letter;
+		switch (n)
+		{
+		case 0:
+			if (judge)
+				three();
+			return 0;
+		case 3: n++; break;
+		case 4:
+			if (judge)
+				return four_refer_section(judge);
+			four_refer_section(judge);
+			if (!judge)
+				system("pause");
+			break;
+		case 1: case 2: break;
+		case 5:
+			if (judge) { cout << "该程序没有这个功能！\n"; system("pause"); system("cls"); four(judge); break; }
+			four_statistics(res);
+			mysql_free_result(res);
+			four(judge);
+			return 0;
+		default: cout << "该程序没有这个功能！\n"; system("pause"); system("cls"); four(judge); return 0;
+		}
+		res = four_refer(res, n, judge);
+		if (!judge)
+			system("pause");
+		else
+			break;
 	}
-	case 3: n++; break;
-	case 4: four_refer_section(judge); system("pause"); return 0;
-	case 1: case 2: break;
-	case 5:
-	{
-		if (judge) { cout << "该程序没有这个功能！\n"; system("pause"); system("cls"); four(judge); break; }
-		four_statistics(res);
-		mysql_free_result(res);
-	}return 0;
-	default: cout << "该程序没有这个功能！\n"; system("pause"); system("cls"); four(judge);
-	}
-	res = four_refer(res, n, judge);
-	if (!judge)
-		system("pause");
 	return res;
 }
 
 void three(void)//功能三：修改学生信息
 {
-	system("cls");
-	cout << endl;
-	cout << "+---------------------------------+\n";
-	cout << "|          修改学生信息           |\n";
-	cout << "+----------------+----------------+\n";
-	cout << "| 1 修改单行数据 | 2 清空所有数据 |\n";
-	cout << "+----------------+----------------+\n";
-	cout << "|                | 0 返回         |\n";
-	cout << "+----------------+----------------+\n";
-	cout << "功能：";
-	int n;
-	cin >> n;
-	switch (n)
+	while (1)
 	{
-	case 0: return;
-	case 1:
-	{
-	end2:;
-		MYSQL_RES* res = four(1);
-		if (res == 0) return;
-		MYSQL_ROW row;
+		system("cls");
 		cout << endl;
 		cout << "+---------------------------------+\n";
-		cout << "|          修改单行数据           |\n";
+		cout << "|          修改学生信息           |\n";
 		cout << "+----------------+----------------+\n";
-		cout << "| 1 修改学号     | 2 修改姓名     |\n";
+		cout << "| 1 修改单行数据 | 2 清空所有数据 |\n";
 		cout << "+----------------+----------------+\n";
-		cout << "| 3 修改性别     | 4 修改班级     |\n";
+		cout << "|                | 0 返回         |\n";
 		cout << "+----------------+----------------+\n";
-		cout << "| 5 修改C成绩    | 6 修改高数成绩 |\n";
-		cout << "+----------------+----------------+\n";
-		cout << "| 7 修改英语成绩 | 8 删除该数据   |\n";
-		cout << "+----------------+----------------+\n";
-		cout << "| 9 不修改       | 0 返回         |\n";
-		cout << "+----------------+----------------+\n";
-		string Newmessage;
-		while (row = mysql_fetch_row(res))
+		cout << "功能：";
+		int n;
+		cin >> n;
+		switch (n)
 		{
-		end1:;
-			cout << "对" << row[0] << "进行修改" << endl;
-			cout << "功能：";
-			cin >> n;
-			char letter[1024];
-			switch (n)
-			{
-			case 0: { mysql_free_result(res); goto end2;}
-			case 9: continue;
-			case 8: sprintf(letter, "DELETE FROM student WHERE id = %s", row[0]); break;
-			case 1:case 2:case 3:case 4:case 5:case 6:case 7:
-			{
-				cout << "请输入学号为" << row[0] << "的" << aim[1][n] << "新数据：";
-				cin >> Newmessage;
-				if (5 <= n && n <= 7)
-					three_adjust_sum_pjnum(row, n);
-				sprintf(letter, "UPDATA student SET %s = \' %s \' WHERE id = %s", aim[0][n].c_str(), Newmessage.c_str(), row[0]);
-			} break;
-			default: cout << "该程序没有这个功能！请重新输入" << endl; goto end1;
-			}
-			const char* stl = letter;
-			sql_execute(mysql, stl);
+		case 0: return;
+		case 1:
+		{
+		end2:;
+			MYSQL_RES* res = four(1);
+			if (res == 0) return;
+			MYSQL_ROW row;
 			cout << endl;
+			cout << "+---------------------------------+\n";
+			cout << "|          修改单行数据           |\n";
+			cout << "+----------------+----------------+\n";
+			cout << "| 1 修改学号     | 2 修改姓名     |\n";
+			cout << "+----------------+----------------+\n";
+			cout << "| 3 修改性别     | 4 修改班级     |\n";
+			cout << "+----------------+----------------+\n";
+			cout << "| 5 修改C成绩    | 6 修改高数成绩 |\n";
+			cout << "+----------------+----------------+\n";
+			cout << "| 7 修改英语成绩 | 8 删除该数据   |\n";
+			cout << "+----------------+----------------+\n";
+			cout << "| 9 不修改       | 0 返回         |\n";
+			cout << "+----------------+----------------+\n";
+			string Newmessage;
+			while (row = mysql_fetch_row(res))
+			{
+			end1:;
+				cout << "对" << row[0] << "进行修改" << endl;
+				cout << "功能：";
+				cin >> n;
+				char letter[1024];
+				switch (n)
+				{
+				case 0: { mysql_free_result(res); goto end2; }
+				case 9: continue;
+				case 8: sprintf(letter, "DELETE FROM student WHERE id = %s", row[0]); break;
+				case 1:case 2:case 3:case 4:case 5:case 6:case 7:
+					cout << "请输入学号为" << row[0] << "的" << aim[1][n] << "新数据：";
+					cin >> Newmessage;
+					if (5 <= n && n <= 7)
+						three_adjust_sum_pjnum(row, n);
+					sprintf(letter, "UPDATE student SET %s = '%s' WHERE id = %s", aim[0][n].c_str(), Newmessage.c_str(), row[0]);
+					break;
+				default: cout << "该程序没有这个功能！请重新输入" << endl; goto end1;
+				}
+				const char* stl = letter;
+				sql_execute(mysql, stl);
+				if (5 <= n && n <= 7)
+				{
+					float rw, t;
+					stringstream ss1, ss2;
+					ss1 << row[7]; ss1 >> rw;
+					ss2 << row[n-1]; ss2 >> t;
+					cout << rw << ' ' << t << endl;
+					rw -= t;
+					float sum = rw + stoi(Newmessage);
+					float pjnum = sum / 3;
+					sprintf(letter, "UPDATE student SET sum = '%f' WHERE id = %s", sum, row[0]);
+					stl = letter;
+					sql_execute(mysql, stl);
+					sprintf(letter, "UPDATE student SET pjnum = '%f' WHERE id = %s", pjnum, row[0]);
+					stl = letter;
+					sql_execute(mysql, stl);
+				}
+				cout << endl;
+			}
+			two();
+			mysql_free_result(res);
+		} break;
+		case 2: three_empty_data(); break; system("pause");
+		default: cout << "该程序没有这个功能！\n"; system("pause"); system("cls"); three(); return;
 		}
-		mysql_free_result(res);
-		two();
-	} break;
-	case 2: three_empty_data(); break; system("pause");
-	default: cout << "该程序没有这个功能！\n"; system("pause"); system("cls"); three(); return;
 	}
 	return;
 }
@@ -372,6 +461,7 @@ void two()//功能二：输出学生信息
 	MYSQL_RES* res;
 	char letter[1024];
 	sprintf(letter, "SELECT * FROM student ORDER BY `%s` %s", order_main.c_str(), ordertemp.c_str());
+	cout << letter << endl;
 	const char* stl = letter;
 	mysql_query(&mysql, stl);
 	res = mysql_store_result(&mysql);
@@ -426,6 +516,7 @@ void menu(void)//菜单
 
 int main(void)
 {
+	sql_connect();
 	sql_login();
 	int i = 1, n;
 	while (i)
@@ -440,7 +531,7 @@ int main(void)
 		case 2: two(); break;
 		case 3: three(); break;
 		case 4: four(0); break;
-		case 5: five(); break;
+		case 5: five();  break;
 		default: cout << "该程序没有这个功能！\n"; system("pause");
 		}
 		system("cls");
