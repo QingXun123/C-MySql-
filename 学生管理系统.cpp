@@ -25,26 +25,24 @@ bool sql_execute(MYSQL m_mysql, const char* sql)//存储表数据
 	return true;
 }
 
-void sql_connect(void)//sql连接
+bool sql_connect(void)//sql连接
 {
 	mysql_init(&mysql);
 	mysql_options(&mysql, MYSQL_SET_CHARSET_NAME, "gbk");
 	if (mysql_real_connect(&mysql, "localhost", "root", "sz2003gd78439851", "test", 3306, NULL, 0) == NULL)
 	{
-		cout << "数据库连接失败，请重新登录！" << endl;
-		system("pause");
-		system("cls");
-		sql_connect();
+		cout << "数据库连接失败，请检查数据库服务是否开启！" << endl;
+		return 1;
 	}
 	else
 	{
 		system("cls");
 		cout << "数据库连接成功！" << endl;
 	}
-	return;
+	return 0;
 }
 
-void sql_login()
+void sql_login()//登录注册账号
 {
 	cout << "+---------------------------------+\n";
 	cout << "|           学生管理系统          |\n";
@@ -136,7 +134,7 @@ void four_menu(bool judge)//功能四菜单
 {
 	cout << "+---------------------------------+\n";
 	cout << "|          ";
-	if (judge)
+	if (judge)//根据功能的不同来选择输出内容的不同
 		cout << "修改";
 	else
 		cout << "查询";
@@ -193,7 +191,7 @@ MYSQL_RES* four_refer(MYSQL_RES* &res, int n, int judge)//查询学生信息
 	char letter[1024];
 	cout << "请输入想要查询的" << aim[1][n] << "：";
 	cin >> message;
-	sprintf(letter, "SELECT * FROM student WHERE `%s` like '%s';", aim[0][n].c_str(), message.c_str());
+	sprintf(letter, "SELECT * FROM student WHERE `%s` like '%s';", aim[0][n].c_str(), message.c_str());//模糊查找
 	const char* stl = letter;
 	mysql_query(&mysql, stl);
 	res = mysql_store_result(&mysql);
@@ -234,12 +232,13 @@ void four_statistics(MYSQL_RES* &res)//统计学生信息
 		if (mt < 60)
 			dis_math_num++;
 		English_pjnum += Et / row_num;//打印英语成绩
-		if (Et < 60)
+		if (Et < 60)//记录不及格人数
 			dis_English_num++;
 		if (pjt < 60)
 			dis_pjnum_num++;
 	}
 	Spjnum = (C_program_pjnum + math_pjnum + English_pjnum) / 3;
+	cout << "------------------------------------";
 	cout << endl << "全校平均分\t\t" << Spjnum << endl;
 	cout << "C语言平均分\t\t" << C_program_pjnum << endl;
 	cout << "高数平均分\t\t" << math_pjnum << endl;
@@ -247,7 +246,8 @@ void four_statistics(MYSQL_RES* &res)//统计学生信息
 	cout << "平均分不及格总人数\t" << dis_pjnum_num << endl;
 	cout << "C语言不及格人数\t\t" << dis_C_program_num << endl;
 	cout << "高数不及格人数\t\t" << dis_math_num << endl;
-	cout << "英语不及格人数\t\t" << dis_English_num << endl << endl;
+	cout << "英语不及格人数\t\t" << dis_English_num << endl;
+	cout << "------------------------------------" << endl;
 	system("pause");
 	return;
 }
@@ -278,7 +278,7 @@ void three_adjust_sum_pjnum(MYSQL_ROW row, int n)//计算总分和平均分并�
 void three_empty_data(void)//清空表数据
 {
 	int n;
-	cout << "是否清空数据？(1/0)" << endl;
+	cout << "是否清空数据？(1/0)" << endl;//防止误按
 	cin >> n;
 	if (n)
 		mysql_query(&mysql, "DELETE FROM student");
@@ -320,7 +320,7 @@ void five(void)//功能五：更改排序方式
 	return;
 }
 
-MYSQL_RES* four(bool judge)//功能四：查询学生信息
+MYSQL_RES* four(bool judge)//功能四：查询学生信息，根据judge值的不同而不同，与功能三共用
 {
 	MYSQL_RES* res;
 	while (1)
@@ -340,15 +340,14 @@ MYSQL_RES* four(bool judge)//功能四：查询学生信息
 			return 0;
 		case 3: n++; break;
 		case 4:
-			if (judge)
-				return four_refer_section(judge);
-			four_refer_section(judge);
+			if (judge) return four_refer_section(judge);//在功能三中返回res值并对其进行修改操作
+			four_refer_section(judge);//返回分段查询到的信息并输出
 			if (!judge)
 				system("pause");
 			break;
 		case 1: case 2: break;
 		case 5:
-			if (judge) { cout << "该程序没有这个功能！\n"; system("pause"); system("cls"); four(judge); break; }
+			if (judge) { cout << "该程序没有这个功能！\n"; system("pause"); system("cls"); four(judge); break; }//功能三中没有这个功能
 			four_statistics(res);
 			mysql_free_result(res);
 			four(judge);
@@ -461,7 +460,6 @@ void two()//功能二：输出学生信息
 	MYSQL_RES* res;
 	char letter[1024];
 	sprintf(letter, "SELECT * FROM student ORDER BY `%s` %s", order_main.c_str(), ordertemp.c_str());
-	cout << letter << endl;
 	const char* stl = letter;
 	mysql_query(&mysql, stl);
 	res = mysql_store_result(&mysql);
@@ -494,6 +492,7 @@ void one(void)//功能一：存入学生信息
 		sprintf(letter, "INSERT INTO student (id, `name`, sex, grade, C_program, math, English, `sum`, pjnum) VALUES (%s, \'%s\', \'%s\', %s, %.2f, %.2f, %.2f, %.2f, %.2f)" , id.c_str(), name.c_str(), sex.c_str(), grade.c_str(), C_program, math, English, sum, pjnum);
 		const char* sql1 = letter;
 		sql_execute(mysql, sql1);
+		cout << endl;
 	}
 	return;
 }
@@ -516,7 +515,7 @@ void menu(void)//菜单
 
 int main(void)
 {
-	sql_connect();
+	if (sql_connect()) return 0;
 	sql_login();
 	int i = 1, n;
 	while (i)
