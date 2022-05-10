@@ -4,7 +4,7 @@
 # include <stdlib.h>
 # include <string.h>
 # include <sstream>
-#include <mysql.h>
+# include <mysql.h>
 using namespace std;
 MYSQL mysql;
 string aim[2][10] = { "NULL", "id", "name", "sex", "grade", "C_program", "math", "English", "sum", "pjnum", "NULL", "学号", "姓名", "性别", "班级", "C语言成绩", "高数成绩", "英语成绩", "总分", "平均分"};
@@ -42,7 +42,7 @@ bool sql_connect(void)//sql连接
 	return 0;
 }
 
-void sql_login()//登录注册账号
+void sql_login(void)//登录注册账号
 {
 	cout << "+---------------------------------+\n";
 	cout << "|           学生管理系统          |\n";
@@ -330,6 +330,7 @@ MYSQL_RES* four(bool judge)//功能四：查询学生信息，根据judge值的�
 		four_menu(judge);
 		cout << "功能：";
 		int n;
+		bool flag = 0;
 		cin >> n;
 		string letter;
 		switch (n)
@@ -343,7 +344,10 @@ MYSQL_RES* four(bool judge)//功能四：查询学生信息，根据judge值的�
 			if (judge) return four_refer_section(judge);//在功能三中返回res值并对其进行修改操作
 			four_refer_section(judge);//返回分段查询到的信息并输出
 			if (!judge)
+			{
+				flag = 1;
 				system("pause");
+			}
 			break;
 		case 1: case 2: break;
 		case 5:
@@ -354,6 +358,8 @@ MYSQL_RES* four(bool judge)//功能四：查询学生信息，根据judge值的�
 			return 0;
 		default: cout << "该程序没有这个功能！\n"; system("pause"); system("cls"); four(judge); return 0;
 		}
+		if (flag)
+			continue;
 		res = four_refer(res, n, judge);
 		if (!judge)
 			system("pause");
